@@ -6,7 +6,9 @@ import re
 
 class hashids():
     version = '0.0.1'
+    # why this alphabet is chosen?
     __alphabet = 'xcS4F6h89aUbideAI7tkynuopqrXCgTE5GBKHLMjfRsz'
+    # why these indexes are chosen?
     __primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43]
     __minHashLength = 0
 
@@ -37,6 +39,8 @@ class hashids():
         self.__guards = [];
         self.__seps = [];
 
+        # throw away those characters from the __alphabet which are on the positons of __primes
+        # this results in having the original __alphabet containing 44-14=30 characters
         for prime in self.__primes:
             if prime - 1 > len(self.__alphabet):
                 break
@@ -171,6 +175,11 @@ class hashids():
         return ret
 
     def __consistentShuffle(self, alphabet, salt):
+        '''
+        Shuffles the alphabet wrt the given salt.
+        The resulting alphabet will consist of the same characters as the original one appearing on different places.
+        "Consistent" implies that given the same alphabet and same salt result will be the same
+        '''
         ret = ''
 
         if type(alphabet) is list:
@@ -185,39 +194,36 @@ class hashids():
             alphabetArray = list(alphabet)
             saltArray = list(salt)
 
-            sortingArray = []
-            for saltCharacter in saltArray:
-                sortingArray.append(ord(saltCharacter))
+            shuffledIndexesArray = map(lambda char: ord(char), saltArray)
 
-            for i in range(len(sortingArray)):
+            # why exactly that whay of obtaining new indexes is chosen
+            for i in range(len(shuffledIndexesArray)):
                 add = True
 
-                for k in range(i, len(sortingArray) + i - 1):
-                    nextIndex = (k + 1) % len(sortingArray)
+                for k in range(i, len(shuffledIndexesArray) + i - 1):
+                    nextIndex = (k + 1) % len(shuffledIndexesArray)
 
                     if add:
-                        sortingArray[i] += sortingArray[nextIndex] + (k * i)
+                        shuffledIndexesArray[i] += shuffledIndexesArray[nextIndex] + (k * i)
                     else:
-                        sortingArray[i] -= sortingArray[nextIndex]
+                        shuffledIndexesArray[i] -= shuffledIndexesArray[nextIndex]
 
                     add = not add
 
-                sortingArray[i] = abs(sortingArray[i])
+                shuffledIndexesArray[i] = abs(shuffledIndexesArray[i])
 
+            # construct the result by choosing an alphabet character at the shuffled index 
             i = 0
-            sortingArraySize = len(sortingArray)
+            shuffledIndexesArraySize = len(shuffledIndexesArray)
             while len(alphabetArray) > 0:
-                size = len(alphabetArray)
-                pos = sortingArray[i]
 
-                if(pos >= size):
-                    pos = pos % size
+                pos = shuffledIndexesArray[i] % len(alphabetArray)
 
                 ret += alphabetArray.pop(pos)
 
-                i = (i + 1) % sortingArraySize
+                i = (i + 1) % shuffledIndexesArraySize
 
-        return ret
+        return ret if len(ret) > 0 else ''.join(alphabet)
 
     def __hash(self, input, alphabet):
         hash = ''
