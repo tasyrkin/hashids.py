@@ -40,7 +40,7 @@ class hashids():
         self.__seps = [];
 
         # throw away those characters from the __alphabet which are on the positons of __primes
-        # this results in having the original __alphabet containing 44-14=30 characters
+        # it results in having the original __alphabet containing 44-14=30 characters
         for prime in self.__primes:
             if prime - 1 > len(self.__alphabet):
                 break
@@ -49,6 +49,8 @@ class hashids():
             self.__seps.append(character)
             self.__alphabet = self.__alphabet.replace(character, ' ')
 
+        # throw away those characters from the __seps which are on specified positions
+        # and put them into __guards resulting 5 characters in __gruards and 13-5=7 characters in __seps
         for index in [0, 4, 8, 12]:
             if index > len(self.__seps):
                 break
@@ -88,9 +90,10 @@ class hashids():
 
         for idx, val in enumerate(values):
             if not idx:
-                lotterySalt = '-'.join('%d' % value for value in values)
-                for subNumber in values:
-                    lotterySalt += '-' + str((subNumber + 1) * 2)
+                # for the first iteration create a lotterySalt consisting of v1-v2-...-vn-(v1+1)*2-(v2+1)*2-...-(vn+1)*2
+                lotterySalt = '-'.join(map(lambda num: str(num), values))
+                lotterySalt += '-'
+                lotterySalt += '-'.join(map(lambda num: str((num+1)*2), values))
 
                 lottery = self.__consistentShuffle(alphabet, lotterySalt)
                 lotteryChar = lottery[0]
